@@ -102,9 +102,9 @@ ENV/
 *.pyc
 *~
 *.swp
-web/local_settings.py
-web/test/test_flow.py
-web/static/downloads/
+www/local_settings.py
+www/test/test_flow.py
+www/static/downloads/
 *.zip
 *.csv
 *xls
