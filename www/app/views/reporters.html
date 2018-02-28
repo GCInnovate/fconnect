@@ -1,0 +1,581 @@
+{% extends "layout.html" %}
+{% from 'layout.html' import navbar, myscripts, err %}
+
+{% block title %}VHT Portal.::.Reporters{% endblock%}
+{% block stylesheets %}
+    <!-- Data Tables -->
+    <link href="/static/css/plugins/dataTables/dataTables.bootstrap.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.responsive.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.tableTools.min.css" rel="stylesheet">
+    <link href="/static/js/plugins/Buttons-1.1.2/css/buttons.dataTables.min.css" rel="stylesheet">
+    <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <!-- Sweet Alert -->
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
+{% endblock %}
+
+{% block nav %}
+    {% call navbar() %}
+
+    {% endcall %}
+{% endblock %}
+
+{% block content %}
+    {{ err(ses.rdata_err)}}
+    <div class="row" id="menu_btns">
+        <div class="col-lg-12">
+            <p>
+            <button class="btn btn-sm btn-primary" id="add_vht"><span class="question"><i class="fa fa-user"></i> Add VHT</span></button>
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-sm btn-warning" id="add_nurse"><span class="question"><i class="fa fa-user"></i> Add Nurse</span></button>
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-sm btn-info" id="add_midwife"><span class="question"><i class="fa fa-user"></i> Add Midwife</span></button>
+            <!--
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-sm btn-warning" id="list_users"><span class="question"><i class="fa fa-list"></i> List Registered</span></button>
+            -->
+            &nbsp;&nbsp;&nbsp;
+            <button class="btn btn-sm btn-success" id="searchNav"><span class="question"><i class="fa fa-search"></i> Search</span></button>
+            </p>
+        </div>
+    </div>
+    <br/>
+    <!-- TABS -->
+    <div class="row" id="data_form">
+        <div class="alert alert-success alert-dismissable fade in">
+            <button aria-hidden="true" class="close" data-dismiss="alert" type="button">×</button>
+            <p class="text-error" id="text-error">{{ err_msg }}</p>
+        </div>
+        <div class="col-lg-12">
+            <div class="tabs-container" id="mytabs">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a data-toggle="tab" href="#tab-1">
+                        <span class="question" id="add_tab_label"><i class="fa fa-user"></i></span></a>
+                    </li>
+                    <li class=""><a data-toggle="tab" href="#tab-2">
+                        <span class="question" id="filter_tab_label"><i class="fa fa-search"></i> Search VHTs</span></a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <!-- tab-1 -->
+                    <div id="tab-1" class="tab-pane active">
+                        <form role="form" class="form-horizontal" data-toggle="validator" id="reporter_form" action="" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="ed" value="{{ reporter_id }}"/>
+                        <div class="panel-body">
+                            <div class="row">
+                                <!-- RIGHT-->
+                                <div class="col-lg-6">
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <label for="firstname" class="col-lg-3 control-label question">First Name<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <input name="firstname" id="firstname" type="text" value="{{ firstname }}" required class="form-control myinput"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group"><label for="lastname" class="col-lg-3 control-label question">Last Name<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <input name="lastname" id="lastname" type="text" value="{{ lastname }}" class="form-control myinput" required/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="gender" class="col-lg-3 control-label question">Sex<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <select name="gender" id="gender" class="form-control myinput">
+                                                    <option value="">Select Sex</option>
+                                                    {% for d in [('F', 'Female'), ('M', 'Male')] %}
+                                                    <option value="{{ d[0]}}" {% if d[0] == gender %} selected="yes" {% endif %}>{{ d[1] }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group"><label for="tel" class="col-lg-3 control-label question">Telephone<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <input name="telephone" id="tel" type="text" value="{{ telephone }}"
+                                                pattern="^(\+?256|0)(3[19]|41|7[015789])[0-9]{7}$" required class="form-control myinput"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group"><label for="alt_tel" class="col-lg-3 control-label question">Other Tel</label>
+                                            <div class="col-lg-9">
+                                                <input name="alt_telephone" id="alt_telephone" type="text" value="{{ alt_telephone }}"
+                                                pattern="^(\+?256|0)(3[19]|41|7[015789])[0-9]{7}$" class="form-control myinput"/>
+                                            </div>
+                                        </div>
+                                        <div class="form-group" id="role_div"><label for="role" class="col-lg-3 control-label question">Role</label>
+                                            <div class="col-lg-9">
+                                                <select name="role" id="role" class="form-control myinput" required>
+                                                    {% for v in roles %}
+                                                    <option value="{{ v.id }}" {% if v.name in role %} selected="yes" {% endif %}>{{ v.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+										<div class="form-group" ><label for="date_of_birth" class="col-lg-3 control-label question">Date of Birth</label>
+											<div class="col-lg-9 input-group date" style="width: 70%">
+												<input name="date_of_birth" id="date_of_birth" type="text" value="{{ date_of_birth }}"
+												placeholder="YYYY-MM-DD" class="form-control myinput" style="margin-left:15px; margin-right:15px; width:97%;"/>
+												<span class="input-group-addon" style=""><i class="fa fa-calendar"></i></span>
+											</div>
+										</div>
+                                        <div class="form-group">
+                                            <label for="name" class="col-lg-3 control-label question">Code</label>
+                                            <div class="col-lg-9">
+                                                <input name="code" id="code" type="text" value="{{ code }}"
+                                                class="form-control myinput"/>
+                                            </div>
+                                        </div>
+
+                                    </div><!-- end right row-->
+                                </div>
+                                <!-- END RIGHT-->
+                                <!-- LEFT-->
+                                <div class="col-lg-6">
+                                    <div class="row">
+                                        <div class="form-group"><label for="district" class="col-lg-3 control-label question">District<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <select name="district" id="district" class="form-control myinput" required>
+                                                    <option value="">Select District</option>
+                                                    {% for d in districts %}
+                                                    <option value="{{ d.id}}" {% if d.id == district.id %} selected="yes" {% endif %}>{{ d.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group"><label class="col-lg-3 control-label question">Subcounty<span class="asterisk">*</span></label>
+                                            <div class="col-lg-9">
+                                                <select name="subcounty" id="subcounty" class="form-control myinput">
+                                                    <option value="">Select Sub County</option>
+                                                    {% for s in subcounties %}
+                                                    <option value="{{ s.id }}" {% if s.id == subcounty.id %} selected="yes" {% endif %}>{{ s.name}}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+										<div class="form-group"><label for="parish" class="col-lg-3 control-label question">Parish</label>
+											<div class="col-lg-9">
+												<select name="parish" id="parish" class="form-control myinput">
+													<option value="">Select Parish</option>
+													{% for p in parishes %}
+													<option value="{{ p.id }}" {% if p.id == parish.id %} selected="yes" {% endif %}>{{ p.name}}</option>
+													{% endfor %}
+												</select>
+											</div>
+										</div>
+										<div class="form-group"><label for="village" class="col-lg-3 control-label question">Village/LC</label>
+											<div class="col-lg-9">
+												<select name="village" id="village" class="form-control myinput">
+													<option value="">Select Village/LC</option>
+													{% for v in villages %}
+													<option value="{{ v.id }}" {% if v.id == village.id %} selected="yes" {% endif %}>{{ v.name}}</option>
+													{% endfor %}
+												</select>
+												<input type="hidden" name="location" id="location" value="{{ location }}"/>
+											</div>
+										</div>
+                                        <div class="form-group"><label class="col-lg-3 control-label question">Facility</label>
+                                            <div class="col-lg-9">
+                                                <select name="facility" id="facility" class="form-control myinput" required>
+                                                    <option value="">Select Health Facility</option>
+                                                    {% for f in facilities %}
+                                                    <option value="{{ f.id }}" {% if f.id == facilityid %} selected="yes" {% endif %}>{{ f.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="col-lg-offset-3 col-lg-3">
+                                                <button class="btn btn-sm btn-primary question" id="btn_save" type="button">Save</button>
+                                            </div>
+                                            <div class="col-lg-offset-3 col-lg-3">
+                                                <button class="btn btn-sm btn-primary question" type="button" id="cancelBtn">Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div> <!-- end left row-->
+                                </div>
+                                <!-- END LEFT-->
+
+
+                            </div><!-- end inner row -->
+                        </div>
+                        </form>
+                    </div>
+                    <!-- end tab-1 -->
+
+                    <!-- tab2 -->
+                    <div id="tab-2" class="tab-pane">
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                        <form class="form-horizontal" role="form" method="get" data-toggle="validator">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <div class="form-group"><label for="search" class="col-lg-3 control-label question">Free Form Search:</label>
+                                            <div class="input-group">
+                                                <input name="search" id="search" type="text" class="form-control" style="font-size: 18px;" required/>
+							                    <span class="input-group-btn">
+                                                    <button class="btn btn-sm btn-primary" type="submit" style="font-size: 15px;">Search VHTs</button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end tab-2 -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END TABS -->
+    <br/>
+    <!-- DATA TABLE -->
+    <div class="row" id="data_list">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>Registered VHTs, Nurses and Midwives</h5>
+                    <div class="ibox-tools">
+                        <button type="button" class="btn btn-sm btn-info question" id="back_btn">Back to Menu</button>
+                        <a class="collapse-link">
+                            <i class="fa fa-chevron-up"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover dataTables-example" id="mydata">
+                            <thead>
+                                <tr>
+                                    <th><input id="selecctall" class=".chkmark" type="checkbox"/></th>
+                                    <th>Name</th>
+                                    <th>Telephone</th>
+                                    <th>Gender</th>
+                                    <th>Role(s)</th>
+                                    <th>District</th>
+                                    <th>Facility</th>
+                                    <th>Created On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for reporter in reporters %}
+                                <tr id="{{ reporter.uuid}}" class="question">
+                                    <td><input name="reqid" class="topromote" value="{{ reporter.id }}" type="checkbox"/></td>
+                                    <td>{{ reporter.name }}</td>
+                                    <td><ul class="question">
+                                        <li>{{ reporter.telephone }}</li>
+                                        <li>{{ reporter.alternate_tel }}</li>
+                                        </ul>
+                                    </td>
+                                    <td>{{ reporter.gender }}</td>
+                                    <td>{{ reporter.role }}</td>
+                                    <td>{{ reporter.district_id|getDistrict }}</td>
+                                    <td>{{ reporter.facility }}</td>
+                                    <td>{{ reporter.created|datetimeformat }}</td>
+                                    <td>
+                                        <a href="/reporters?ed={{ reporter.id }}" class="btn btn-primary btn-xs question edit_action" value={{ reporter.id }}>
+                                            Edit &nbsp;<i class="fa fa-edit"></i></a>
+                                        <!--
+                                                            &nbsp;&nbsp;&nbsp;
+                                        <button type="button" class="btn btn-white btn-xs sms_btn" id="{{reporter.id}}" data-toggle="modal"
+											data-target="#myModal3">
+												SMS &nbsp;<i title="SMS" class="fa fa-envelope-o"></i>
+										</button>
+                                        -->
+                                                            &nbsp;&nbsp;&nbsp;
+                                        <button class="btn btn-danger btn-xs delete_btn question" id={{ reporter.id}}>Delete &nbsp;<i class="fa fa-trash-o"></i></button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        </table>
+                        {{ pagination_str }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END DATA TABLE -->
+    <form role="form" action="" method="post" id="form2" class="form-horizontal">
+    <div class="modal inmodal" id="myModal3" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content animated flipInY">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span></button>
+                        <h4 class="modal-title">Send SMS</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="modal_res2">
+                    </div>
+                    <div class="row">
+						<div class="col-lg-12">
+							<div class="form-group"><label class="col-lg-3 control-label">To:</label>
+                                <input type="hidden" name="uuid" id="uuid"i/>
+								<div class="col-lg-9" id="reporter_name">
+									<p>Gwe</p>
+								</div>
+							</div>
+							<br/>
+							<br/>
+							<div class="form-group"><label for="remarks" class="col-lg-3 control-label">Message:</label>
+								<div class="col-lg-9">
+									<textarea name="sms" id="sms" type="text"  rows="4" class="form-control"></textarea>
+								</div>
+							</div>
+                            <br/>
+                            <br/>
+                            <div class="form-group" style="margin-top:5px;">
+								<div class="col-lg-2 col-lg-offset-10">
+									<input type="text" name="counter" size="7" id="counter" readonly/>
+								</div>
+							</div>
+						</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-white" data-dismiss="modal">Close</button>
+                    <button class="btn btn-primary" type="submit" id="sendsms">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    {% call myscripts() %}
+        <!-- Data Tables -->
+        <script src="/static/js/plugins/dataTables/jquery.dataTables.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.bootstrap.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.responsive.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.tableTools.min.js"></script>
+
+        <script type="text/javascript" src="/static/js/plugins/Buttons-1.1.2/js/dataTables.buttons.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/Buttons-1.1.2/js/buttons.flash.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/jszip.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/pdfmake.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/vfs_fonts.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/Buttons-1.1.2/js/buttons.html5.min.js"></script>
+        <script type="text/javascript" src="/static/js/plugins/Buttons-1.1.2/js/buttons.print.min.js"></script>
+
+        <script src="/static/js/plugins/bootstrap-validator/dist/validator.min.js"></script>
+        <!-- Sweet alert -->
+        <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
+		<!-- Data picker -->
+        <script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script>
+
+        <script src="/static/js/mtrackpro/reporters.js"></script>
+        <script>
+           $(document).ready(function() {
+
+            $('#data_form').hide();
+            $('#data_list').hide();
+            $('#mydata').DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
+                ],
+                pageLength: 25,
+                bPaginate: false,
+                info: false
+
+            });
+			$('.input-group.date').datepicker({
+                todayBtn: "linked",
+                keyboardNavigation: false,
+                forceParse: false,
+                calendarWeeks: true,
+                autoclose: true,
+                format: "yyyy-mm-dd"
+            });
+
+            $('.delete_btn').click(function () {
+                del_id = $(this).attr('id');
+                table_row = $(this).closest('tr');
+                swal({
+                        title: "Are you sure?",
+                        text: "Your will not be able to recover all details taged to the reporter",
+                        type: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#DD6B55",
+                        confirmButtonText: "Yes, delete it!",
+                        cancelButtonText: "No, cancel please!",
+                        closeOnConfirm: false,
+                        closeOnCancel: false },
+                    function (isConfirm) {
+                        if (isConfirm) {
+                            $.get(
+                                '/reporters',
+                                {d_id: del_id, caller: 'api'},
+                                function(data){
+                                    if (data.message == "success"){
+                                        /* remove row from table */
+                                        table_row.remove();
+                                    };
+                                },
+                                'json'
+                            );
+                            swal("Deleted!", "Reporter has been deleted." + del_id, "success");
+                            return false;
+                        } else {
+                            swal("Cancelled", "Reporter details are safe!", "error");
+                            return false;
+                        }
+                    });
+            });
+
+            $('#selecctall').click(function (event) {
+                $('.topromote:input:checkbox').prop('checked', this.checked);
+            });
+            $(".topromote").click(function () {
+                if (!$(this).is(':checked'))
+                $("#selecctall").prop('checked', false);
+            });
+            $('#sms').keyup(function(){
+                var obj = $('#sms');
+                var cc = $('#counter');
+                var x = obj.val();
+                var l = obj.val().length;
+                cc.val(l);
+                if(x.length >= 160){
+                        var y = obj.val().substring(0,160);
+                        obj.val(y);
+                        cc.val(160);
+                }
+    		});
+
+
+            $('.sms_btn').click(function(){
+                $('#sms').val("");
+                $('#counter').val("");
+                $('#modal_res2').html("");
+                var currentRow = $(this).closest("tr");
+                var reporteruuid = currentRow.attr('id');
+                $('#uuid').val(reporteruuid);
+                var name = currentRow.find("td:eq(1)").text();
+                var reporter = currentRow.find("td:eq(2)").text();
+                var tag = name + " (" + reporter + ")"
+                $('#reporter_name').html("<strong>" + tag + "</strong>");
+            });
+            $('#sendsms').click(function(){
+                $('#modal_res2').css({'color': 'green'});
+                txt = $('#sms').val();
+                uuid = $('#uuid').val();
+                $.post(
+                    '/api/v1/sendsms',
+                    {uuid:uuid, sms:txt},
+                    function(data){
+                        if (data == "Success") {
+                            $('#modal_res2').html("<h4>Successfully Sent SMS</h4>");
+                        }else {
+                            $('#modal_res2').css({'color': 'red'});
+                            $('#modal_res2').html("<h4>Failed to Send SMS</h4>");
+                        }
+                    }
+                );
+                return false;
+            });
+
+            /* Now Play with ADD Buttons*/
+            $('#role_div').hide();
+            $('#add_vht').click(function(){
+                $('#add_tab_label').html("<i class='fa fa-user'></i>VHT");
+                $('#data_form').show();
+                $('#data_list').hide();
+                $('#role_div').hide();
+                $('#menu_btns').hide();
+                $('#role').val("1");
+                $('a[href="#tab-1"]').click();
+            });
+            $('#add_nurse').click(function(){
+                $('#add_tab_label').html("<i class='fa fa-user'></i>Nurse");
+                $('#role').val("2");
+                $('#data_form').show();
+                $('#data_list').hide();
+                $('#role_div').hide();
+                $('#menu_btns').hide();
+                $('a[href="#tab-1"]').click();
+            });
+            $('#add_midwife').click(function(){
+                $('#add_tab_label').html("<i class='fa fa-user'></i>Midwife");
+                $('#role').val("3");
+                $('#data_form').show();
+                $('#data_list').hide();
+                $('#role_div').hide();
+                $('#menu_btns').hide();
+                $('a[href="#tab-1"]').click();
+            });
+            $('#list_users').click(function(){
+                $('#data_list').show();
+                $('#data_form').hide();
+            });
+            $('#cancelBtn').click(function(){
+                $('#data_form').hide();
+                $('#menu_btns').show();
+            });
+            $('#searchNav').click(function(){
+                $('#data_form').show();
+                $('#data_list').hide();
+                $('a[href="#tab-2"]').click();
+
+            });
+            $('#back_btn').click(function(){
+                $('#menu_btns').show();
+                $('#data_list').hide();
+            });
+            $('#edit_link').click(function(){
+                $('#data_list').show();
+                $('#data_form').hide();
+                $('#menu_btns').hide();
+                $('.delete_btn').hide();
+                $('.edit_action').show();
+                return false;
+            });
+            $('#delete_link').click(function(){
+                $('#data_list').show();
+                $('#data_form').hide();
+                $('#menu_btns').hide();
+                $('.delete_btn').show();
+                $('.edit_action').hide();
+                return false;
+            });
+
+            {% if edit_val %}
+            $('#data_form').show();
+            $('#role_div').show();
+            {% endif %}
+
+            {% if search_field %}
+            $('#data_list').show();
+            {% endif %}
+
+            {% if show == 'edit' %}
+                $('#data_list').show();
+                $('.edit_action').show();
+                $('.delete_btn').hide();
+            {% endif %}
+            {% if show == 'delete' %}
+                $('#data_list').show();
+                $('.delete_btn').show();
+                $('.edit_action').hide();
+            {% endif %}
+
+            $('#btn_save').click(function(){
+                $.post('/reporters?caller=api&user=' + '{{ ses.username }}',
+                    $('#reporter_form').serializeArray(),
+                    function(data){
+                        data = $.parseJSON( data );
+                        $('#text-error').html(data.message);
+                    });
+                return false;
+            });
+        });
+        </script>
+    {% endcall %}
+{% endblock %}
+
+

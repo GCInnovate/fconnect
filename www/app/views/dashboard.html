@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+{% from 'layout.html' import navbar, myscripts %}
+
+{% block title %}VHT Portal.::.Dashboard{% endblock%}
+{% block stylesheets %}
+    <!-- Data Tables -->
+    <link href="/static/css/plugins/dataTables/dataTables.bootstrap.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.responsive.css" rel="stylesheet">
+    <link href="/static/css/plugins/dataTables/dataTables.tableTools.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block nav %}
+    {% call navbar() %}
+
+    {% endcall %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  	<div class="col-lg-3">
+        <div class="ibox">
+            <div class="ibox-content">
+                <h5 class="m-b-md">Total VHTs Registered</h5>
+                <h2 class="text-navy"> {{ 3 }}</h2>
+                <small></small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="ibox">
+            <div class="ibox-content">
+                <h5 class="m-b-md">Total Nurses Registered</h5>
+                <h2 class="text-navy">{{ 0 }}</h2>
+                <small> </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="ibox">
+            <div class="ibox-content">
+                <h5 class="m-b-md">Total Midwives Registered</h5>
+                <h2 class="text-navy">{{ 0 }}</h2>
+                <small></small>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <form method="post" action="" role="form">
+    <div class="col-lg-3">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>{% if ses.role == 'District User'%} {{ ses.username | capitalize }}{% endif %} VHT Template</h5></div>
+            <div class="ibox-content">
+                <div class="form-group"><label for="district" class="col-lg-3 control-label">District:</label>
+                    <div class="col-lg-9">
+                        <select name="district" id="district" class="form-control" required>
+                                {% for d in districts %}
+                                <option value="{{ d.id}}" {% if d.id == district.id %} selected="yes" {% endif %}>{{ d.name}}</option>
+                                {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <br/>
+                <br/>
+                <div>
+                    <button name="download" class="btn btn-outline btn-success  dim" type="submit" value="VHT Template">
+                    <i class="fa fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {% call myscripts() %}
+        <!-- Data Tables -->
+        <script src="/static/js/plugins/dataTables/jquery.dataTables.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.bootstrap.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.responsive.js"></script>
+        <script src="/static/js/plugins/dataTables/dataTables.tableTools.min.js"></script>
+
+        <script src="/static/js/plugins/bootstrap-validator/dist/validator.min.js"></script>
+        <script>
+           $(document).ready(function() {
+            $('.dataTables-example').DataTable({
+                "dom": 'lTfigt',
+                "tableTools": {
+                    "sSwfPath": "/static/js/plugins/dataTables/swf/copy_csv_xls_pdf.swf"
+                }
+            });
+
+        });
+        </script>
+    {% endcall %}
+{% endblock %}

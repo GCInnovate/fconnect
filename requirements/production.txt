@@ -1,0 +1,6 @@
+web.py
+Jinja2
+psycopg2
+phonenumbers
+simplejson
+xlwt

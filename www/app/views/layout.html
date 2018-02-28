@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %} {% endblock %}</title>
+
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+    <link href="/static/css/animate.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/pagination.css" rel="stylesheet">
+    <style type="text/css">
+        .error {
+        color: #990000;
+        background-color: #FFF0F0;
+        padding: 7px;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        border: 1px dashed #990000;
+    }
+    .asterisk {
+		font-family: 'Courier New',monospace;
+		display: -moz-inline-stack;
+		display: inline-block;
+		vertical-align: top;
+		zoom: 1;
+		margin-top: -5px;
+	}
+	.question {
+    	font-size: 17px;
+	}
+    .question2 {
+    	font-size: 14px;
+	}
+	.myinput {
+    	font-size: 18px;
+	}
+    </style>
+    {% block stylesheets %} {% endblock %}
+
+</head>
+
+<body>
+    <div id="wrapper">
+    {% block nav %}{% endblock %}
+
+    <div id="page-wrapper" class="gray-bg">
+        <div class="row border-bottom">
+            <nav class="navbar navbar-static-top white-bg" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
+				<form role="search" class="navbar-form-custom" method="get" action="/reporters">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+					<div class="form-group">
+						<div class="input-group">
+							<input type="text" placeholder="Search for health worker..." class="form-control" style="font-size: 18px;" name="search" id="top-search">
+							<span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary" style="margin-top:10px; margin-left:20px; font-size: 15px;"><i class="fa fa-search"></i>&nbsp; Search</button>
+                            </span>
+						</div>
+					</div>
+            	</form>
+
+            </div>
+                <ul class="nav navbar-top-links navbar-right">
+                    <li>
+                        <span class="m-r-sm text-muted welcome-message">Logged in as {{ ses.name }}</span>
+                    </li>
+
+                    <li>
+                        <a href="/logout">
+                            <i class="fa fa-sign-out"></i> Log out
+                        </a>
+                    </li>
+                    <!-- XXX
+                    <li>
+                        <a class="right-sidebar-toggle">
+                            <i class="fa fa-tasks"></i>
+                        </a>
+                    </li>
+                    -->
+                </ul>
+
+            </nav>
+        </div>
+
+        <div class="wrapper wrapper-content">
+            {% block content %}{% endblock %}
+
+        </div>
+        <div class="footer">
+            <div class="pull-right">
+                MoH/UNICEF.
+            </div>
+            <div>
+                <strong>Copyright</strong> VHT Portal &copy; 2017
+            </div>
+        </div>
+
+        </div>
+        {% block right_sidebar %}{% endblock%}
+        {% block chat_popup %}{% endblock%}
+
+    </div>
+
+    {% block scripts %} {% endblock %}
+
+</body>
+</html>
+
+{% macro navbar() -%}
+ <nav class="navbar-default navbar-static-side" role="navigation">
+        <div class="sidebar-collapse">
+            <ul class="nav metismenu" id="side-menu">
+                <li class="nav-header">
+                    <div class="dropdown profile-element"> <span>
+                            <img alt="image" class="img-circle" src="/static/img/sam3.jpg" />
+                             </span>
+                        <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold">{{ ses.username|capitalize }}</strong>
+                             </span> <span class="text-muted text-xs block">My Account<b class="caret"></b></span> </span> </a>
+                        <ul class="dropdown-menu animated fadeInRight m-t-xs">
+                            {% if ses.role == 'Administrator' %}
+                            <li><a href="/users">Profile</a></li>
+                            <li class="divider"></li>
+                            {% endif %}
+                            <li><a href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                    <div class="logo-element">
+                        VHT Portal
+                    </div>
+                </li>
+                <li>
+                    <a href="/dashboard"><i class="fa fa-th-large"></i> <span class="nav-label question2">Reports</span></span></a>
+                </li>
+                {% if ses.role in ('District User', 'Administrator') %}
+                <li>
+                    <a href="/reporters"><i class="fa fa-group"></i> <span class="nav-label question2">Add VHT</span></a>
+                </li>
+                <li>
+                    <a href="/reporters?show=edit" id="edit_link"><i class="fa fa-edit"></i> <span class="nav-label question2">Edit VHT</span></a>
+                </li>
+                <li>
+                    <a href="/reporters?show=delete" id="delete_link"><i class="fa fa-trash" id="delete_link"></i> <span class="nav-label question2">Delete VHT</span></a>
+                </li>
+                <li>
+                    <a href="/bulkupload"><i class="fa fa-upload"></i> <span class="nav-label question2">Bulk Upload</span></a>
+                </li>
+                <!--
+                <li>
+                    <a href="/facilities"><i class="fa fa-university"></i> <span class="nav-label question">Facilities</span></a>
+                </li>
+                <li><a href="/downloads"><i class="fa fa-download"></i><span class="nav-label question2">My Downloads</span></a></li>
+                -->
+                {% endif %}
+
+                {% if ses.role in ('Data Manager') %}
+                <li>
+                    <a href="/adminunits"><i class="fa fa-map-marker"></i><span class="nav-label question2">Admin Units</span></a>
+                </li>
+                {% endif %}
+
+
+                <!-- Put Other links here-->
+                    {{ caller() }}
+                <!-- -->
+                {% if ses.role == 'Administrator' %}
+                <li>
+                    <a href="#"><i class="fa fa-wrench"></i> <span class="nav-label question2">Admin</span><span class="fa arrow"></span></a>
+                    <ul class="nav nav-second-level collapse question2">
+                        <li><a href="/users"><i class="fa fa-user"></i>Users</a></li>
+                        <li><a href="/groups"><i class="fa fa-group"></i>Groups</a></li>
+                        <li><a href="/fsync"><i class="fa fa-refresh"></i>Facility Sync</a></li>
+                        <li><a href="/adminunits"><i class="fa fa-map-marker"></i>Admin Units</a></li>
+                        <li><a href="/auditlog"><i class="fa fa-list"></i>AuditLog</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                <!--
+                <li>
+                    <a href="/static/help/{{ses.role + " Manual.pdf"}}" target="_blank"><i class="fa fa-book"></i> <span class="nav-label">Help</span></a>
+                </li>
+                -->
+            </ul>
+
+        </div>
+    </nav>
+{%- endmacro %}
+
+
+{% macro myscripts() %}
+    <!-- Mainly scripts -->
+    <script src="/static/js/jquery-2.1.1.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="/static/js/inspinia.js"></script>
+    <script src="/static/js/plugins/pace/pace.min.js"></script>
+
+    {{ caller() }}
+{%- endmacro %}
+
+{% macro rightsidebar() %}
+     <div id="right-sidebar">
+            <div class="sidebar-container">
+                {{ caller() }}
+            </div>
+    </div>
+{%- endmacro %}
+
+{% macro err(err_msg) -%}
+    {% if err_msg %}
+    <div class="alert alert-danger fade in">
+        <button class="close" data-dismiss="alert" type="button">×</button>
+        <br/>
+        <p class="text-error">{{ err_msg }}</p>
+    </div>
+    {% endif %}
+{%-endmacro %}
+
+{% macro busted() -%}
+    <div class="row">
+            <div class="col-lg-5">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>**403** Get Out of Here!</h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="fa fa-chevron-up"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="alert alert-danger fade in">
+                            <p class="text-error">BUSTED!!! ACCESS DENIED!!!!</p>
+                        </div>
+                        <br/>
+                        <div class="carousel slide">
+                            <div class="carousel-inner">
+                                <div class="item active">
+                                    <img alt="image" class="img-responsive" src="/static/img/oswadde.jpg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+{%-endmacro %}
