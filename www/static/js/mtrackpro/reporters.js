@@ -3,6 +3,7 @@ $(function(){
         var districtid = $(this).val();
         if (districtid == '0' || districtid == "")
             return;
+        $('#districtname').val($('#district option:selected').text());
         $('#location').val(districtid);
         $('#subcounty').empty();
         $('#subcounty').append("<option value='' selected='selected'>Select Sub County</option>");
@@ -44,6 +45,7 @@ $(function(){
         var subcountyid = $(this).val();
         if (subcountyid == '0' || subcountyid == '')
             return;
+        $('#subcountyname').val($('#subcounty option:selected').text());
         $('#location').val(subcountyid);
         $('#facility').empty();
         $('#parish').empty();
@@ -88,6 +90,7 @@ $(function(){
         var parishid = $(this).val();
         if (parishid == '0' || parishid == '')
             return;
+        $('#parishname').val($('#parish option:selected').text());
         $('#location').val(parishid);
         $('#village').empty();
         $('#village').append("<option value='' selected='selected'>Select Village</option>");
@@ -113,6 +116,12 @@ $(function(){
         var villageid = $(this).val();
         if (villageid == '0' || villageid == '')
             return;
+        $('#villagename').val($('#village option:selected').text());
         $('#location').val(villageid);
+    });
+
+    /*When facility is changed*/
+	$('#facility').change(function(){
+        $('#facilityname').val($('#facility option:selected').text());
     });
 });

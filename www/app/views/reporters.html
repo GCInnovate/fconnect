@@ -140,6 +140,7 @@
                                                     <option value="{{ d.id}}" {% if d.id == district.id %} selected="yes" {% endif %}>{{ d.name}}</option>
                                                     {% endfor %}
                                                 </select>
+												<input type="hidden" name="districtname" id="districtname" value="{{ districtname }}"/>
                                             </div>
                                         </div>
                                         <div class="form-group"><label class="col-lg-3 control-label question">Subcounty<span class="asterisk">*</span></label>
@@ -150,6 +151,7 @@
                                                     <option value="{{ s.id }}" {% if s.id == subcounty.id %} selected="yes" {% endif %}>{{ s.name}}</option>
                                                     {% endfor %}
                                                 </select>
+												<input type="hidden" name="subcountyname" id="subcountyname" value="{{ subcountyname }}"/>
                                             </div>
                                         </div>
 										<div class="form-group"><label for="parish" class="col-lg-3 control-label question">Parish</label>
@@ -160,6 +162,7 @@
 													<option value="{{ p.id }}" {% if p.id == parish.id %} selected="yes" {% endif %}>{{ p.name}}</option>
 													{% endfor %}
 												</select>
+												<input type="hidden" name="parishname" id="parishname" value="{{ parishname }}"/>
 											</div>
 										</div>
 										<div class="form-group"><label for="village" class="col-lg-3 control-label question">Village/LC</label>
@@ -171,6 +174,7 @@
 													{% endfor %}
 												</select>
 												<input type="hidden" name="location" id="location" value="{{ location }}"/>
+												<input type="hidden" name="villagename" id="villagename" value="{{ villagename }}"/>
 											</div>
 										</div>
                                         <div class="form-group"><label class="col-lg-3 control-label question">Facility</label>
@@ -181,6 +185,7 @@
                                                     <option value="{{ f.id }}" {% if f.id == facilityid %} selected="yes" {% endif %}>{{ f.name }}</option>
                                                     {% endfor %}
                                                 </select>
+												<input type="hidden" name="facilityname" id="facilityname" value="{{ facilityname }}"/>
                                             </div>
                                         </div>
 

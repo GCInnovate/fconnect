@@ -47,7 +47,7 @@ class Reporters:
             res = db.query(
                 "SELECT id, firstname, lastname, gender, telephone, "
                 "reporting_location, role, alternate_tel, facilityid, facility, code, date_of_birth, "
-                "created FROM reporters_view "
+                "created, loc_name FROM reporters_view "
                 " WHERE id = $id", {'id': edit_val})
             if res:
                 r = res[0]
@@ -62,19 +62,26 @@ class Reporters:
                 subcounty = ""
                 facilityid = r.facilityid
                 facility = r.facility
+                facilityname = r.facility
                 code = r.code
                 date_of_birth = r.date_of_birth
                 district = ""
+                villagename = r.loc_name
                 subcounties = []
                 ancestors = db.query(
                     "SELECT id, name, level FROM get_ancestors($loc) "
                     "WHERE level > 1 ORDER BY level DESC;", {'loc': location})
                 if ancestors:
                     for loc in ancestors:
+                        if loc['level'] == 4:
+                            parish = loc
+                            parishname = loc['name']
                         if loc['level'] == 3:
                             subcounty = loc
+                            subcountyname = loc['name']
                         elif loc['level'] == 2:
                             district = loc
+                            districtname = loc['name']
                             subcounties = db.query(
                                 "SELECT id, name FROM get_children($id)", {'id': loc['id']})
                 else:
@@ -109,6 +116,7 @@ class Reporters:
                     }
                     db.query("DELETE FROM reporter_groups_reporters WHERE reporter_id=$id", {'id': params.d_id})
                     db.query("DELETE FROM reporter_healthfacility WHERE reporter_id=$id", {'id': params.d_id})
+                    db.query("DELETE FROM schedules WHERE reporter_id=$id", {'id': params.d_id})
                     db.query("DELETE FROM reporters WHERE id=$id", {'id': params.d_id})
                     audit_log(db, log_dict)
                     if params.caller == "api":  # return json if API call
@@ -182,8 +190,9 @@ class Reporters:
     def POST(self):
         params = web.input(
             firstname="", lastname="", gender="", telephone="", email="", location="",
-            role=[], alt_telephone="", page="1", ed="", d_id="", district="", facility="",
-            code="", date_of_birth="", caller="", user="api_user")
+            role="", alt_telephone="", page="1", ed="", d_id="", district="", facility="",
+            code="", date_of_birth="", caller="", user="api_user", districtname="",
+            subcountyname="", parishname="", villagename="", facilityname="")
         if params.caller != 'api':
             session = get_session()
             username = session.username
@@ -201,6 +210,11 @@ class Reporters:
             allow_edit = True
         except:
             pass
+        facilityuid = ""
+        rs = db.query("SELECT code FROM healthfacilities WHERE id = %s;" % params.facility)
+        if rs:
+            facilityuid = rs[0]['code']
+
         current_time = datetime.datetime.now()
         # Set params to schedule a push_contact to Push reporter to RapidPro
         urns = []
@@ -219,10 +233,17 @@ class Reporters:
         contact_params = {
             'urns': urns,
             'name': params.firstname + ' ' + params.lastname,
-            'groups': ['%s' % rolesById[int(i)] for i in params.role],
+            'groups': ['%s' % rolesById[int(params.role)]],
             'fields': {
                 # 'email': params.email,
-                'gender': params.gender
+                'gender': params.gender,
+                'facility': params.facilityname,
+                'village': params.villagename,
+                'district': params.districtname,
+                'sub_county': params.subcountyname,
+                'parish': params.parishname,
+                'facilityuid': facilityuid,
+                'type': '%s' % rolesById[int(params.role)]
             }
         }
 
@@ -268,7 +289,7 @@ class Reporters:
                     audit_log(db, log_dict)
 
                     sync_time = current_time + datetime.timedelta(seconds=60)
-                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact', params.ed)
                 if params.caller == 'api':
                     web.header("Content-Type", "application/json; charset=utf-8")
                     return json.dumps({'message': 'Reporter edited successfully.'})
@@ -324,7 +345,7 @@ class Reporters:
                     audit_log(db, log_dict)
 
                     sync_time = current_time + datetime.timedelta(seconds=60)
-                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact', reporter_id)
                 if params.caller == 'api':
                     web.header("Content-Type", "application/json; charset=utf-8")
                     return json.dumps({'message': 'success'})

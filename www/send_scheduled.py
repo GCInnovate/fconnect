@@ -5,6 +5,7 @@ import json
 import requests
 import logging
 from settings import config
+from temba_client.v2 import TembaClient
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -13,6 +14,8 @@ logging.basicConfig(
     filename='/tmp/fconnect_sched.log',
     filemode='a'
 )
+
+client = TembaClient(config.get('familyconnet_uri', 'http://localhost:8000/'), config['api_token'])
 
 # To handle Json in DB well
 psycopg2.extras.register_default_json(loads=lambda x: x)
@@ -36,12 +39,12 @@ def sendsms(params):  # params has the sms params
     return res.text
 
 cur.execute(
-    "SELECT id, params::text, type FROM schedules WHERE to_char(run_time, 'yyyy-mm-dd HH:MI')"
+    "SELECT id, params::text, type, reporter_id FROM schedules WHERE to_char(run_time, 'yyyy-mm-dd HH:MI')"
     " = to_char(now(), 'yyyy-mm-dd HH:MI') "
     " AND status = 'ready' FOR UPDATE NOWAIT")
 # FOR DEBUGGING
 # cur.execute(
-#     "SELECT id, params::text, type FROM schedules LIMIT 1")
+#     "SELECT id, params::text, type FROM schedules ORDER BY id DESC LIMIT 1")
 
 res = cur.fetchall()
 sched_len = len(res)
@@ -60,9 +63,34 @@ for r in res:
             logging.info(
                 "Scheduler run: [schedid:%s] [status:%s] [msg:%s]" % (r["id"], status, params["text"]))
         elif r['type'] == 'push_contact':  # push RapidPro contacts
-            resp = post_request(json.dumps(params))
+            cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
+            rpt = cur.fetchone()
+            if rpt["uuid"]:
+                # here we update contact in rapidpro
+                resp = post_request(
+                    json.dumps(params), config["default_api_uri"] + "?uuid=" + rpt["uuid"])
+            else:
+                # here we create contact in rapidpro
+                resp = post_request(json.dumps(params))
+            # print resp.text
             if resp.status_code in (200, 201, 203, 204):
                 status = 'completed'
+                response_dict = json.loads(resp.text)
+                # print response_dict
+                contact_uuid = response_dict["uuid"]
+                if not rpt["uuid"]:
+                    # update uuid for new contacts and start welcome flow
+                    cur.execute(
+                        "UPDATE reporters SET uuid = %s WHERE id=%s",
+                        [contact_uuid, r["reporter_id"]])
+                    try:
+                        client.create_flow_start(
+                            config['vht_registration_flow_uuid'],
+                            contacts=[contact_uuid],
+                            extra=params)
+                    except:
+                        pass
+                    conn.commit()
             else:
                 status = 'failed'
             cur.execute("UPDATE schedules SET status = %s WHERE id = %s", [status, r["id"]])
