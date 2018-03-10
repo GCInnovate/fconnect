@@ -250,6 +250,7 @@ class Reporters:
         with db.transaction():
             if params.ed and allow_edit:
                 location = params.location if params.location else None
+                date_of_birth = params.date_of_birth if params.date_of_birth else None
                 r = db.query(
                     "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                     "telephone=$telephone, reporting_location=$location, "
@@ -260,7 +261,7 @@ class Reporters:
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'id': params.ed,
                         'alt_tel': params.alt_telephone, 'district_id': params.district,
-                        'code': params.code, 'date_of_birth': params.date_of_birth
+                        'code': params.code, 'date_of_birth': date_of_birth
                     })
                 if r:
                     for group_id in params.role:
