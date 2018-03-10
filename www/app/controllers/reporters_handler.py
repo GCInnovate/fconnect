@@ -276,7 +276,7 @@ class Reporters:
                     # delete other groups
                     db.query(
                         "DELETE FROM reporter_groups_reporters WHERE "
-                        "reporter_id=$id AND group_id NOT IN $roles",
+                        "reporter_id=$id AND group_id = $roles",
                         {'id': params.ed, 'roles': params.role})
 
                     log_dict = {
