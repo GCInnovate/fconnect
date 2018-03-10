@@ -368,6 +368,7 @@ CREATE TABLE schedules(
     status TEXT NOT NULL DEFAULT 'ready',
     created_by INTEGER REFERENCES users(id),
     updated_by INTEGER REFERENCES users(id),
+    reporter_id INTEGER REFERENCES reporters(id),
     created TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
