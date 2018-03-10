@@ -233,7 +233,7 @@ class Reporters:
         contact_params = {
             'urns': urns,
             'name': params.firstname + ' ' + params.lastname,
-            'groups': ['%s' % rolesById[int(params.role)]],
+            # 'groups': ['%s' % rolesById[int(params.role)]],
             'fields': {
                 # 'email': params.email,
                 'gender': params.gender,
