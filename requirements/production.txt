@@ -4,3 +4,5 @@ psycopg2
 phonenumbers
 simplejson
 xlwt
+XlsxWriter
+rapidpro-python

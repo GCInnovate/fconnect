@@ -141,6 +141,8 @@ for d in data:
                 'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user}
             import pprint
             pprint.pprint(params)
-            requests.post('http://localhost:9393/reportersupload', data=params)
+            requests.post(config.get(
+                'reporters_upload_endpoint',
+                'http://localhost:8080/reportersupload'), data=params)
 
 conn.close()

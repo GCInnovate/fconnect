@@ -63,6 +63,7 @@ config = {
     'api_url': 'http://localhost:8000/api/v2/',
     'vht_registration_flow_uuid': 'a974dae1-53bf-4eb6-bcd9-941c50b6b362',
     'familyconnect_uri': 'http://localhost:8000/',
+    'reporters_upload_endpoint': 'http://localhost:8080/reportersupload'
 }
 
 # the order of fields in the reporter upload excel file
