@@ -14,17 +14,40 @@ class BulkUpload:
         edit_val = params.ed
         session = get_session()
 
+        if session.role == 'District User':
+            districts_SQL = (
+                "SELECT id, name FROM locations WHERE type_id = "
+                "(SELECT id FROM locationtype WHERE name = 'district') "
+                "AND name = '%s'" % session.username.capitalize())
+        else:
+            districts_SQL = (
+                "SELECT id, name FROM locations WHERE type_id = "
+                "(SELECT id FROM locationtype WHERE name = 'district') ORDER by name")
+
+        districts = db.query(districts_SQL)
+        district = {}
+
         l = locals()
         del l['self']
         return render.bulkupload(**l)
 
     @require_login
     def POST(self):
-        params = web.input(uploadfile={}, caller='web', user='api_user')
+        params = web.input(uploadfile={}, caller='web', user='api_user', download="")
         # print "===>", params.keys()
         # print params.qquuid
         # print params.qqtotalfilesize
         # print params.qqfilename
+        if params.download == 'VHT Template':
+            session = get_session()
+            if session.role == 'District User':
+                district = session.username.capitalize()
+                filename = '%s_Template.xlsx' % district
+                fpath = "/static/downloads/" + filename
+                web.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheey')
+                web.header('Content-disposition', 'attachment; filename=%s' % filename)
+                web.seeother(fpath)
+
         if params.caller != 'api':
             session = get_session()
             username = session.username

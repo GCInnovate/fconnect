@@ -6,6 +6,7 @@ controllers of the app.
 
 # from web.contrib.template import render_mako
 import web
+import datetime
 from web.contrib.template import render_jinja
 from settings import (absolute, config)
 
@@ -96,7 +97,7 @@ render = render_jinja(
 )
 
 render._lookup.globals.update(
-    ses=get_session(), roles=roles
+    ses=get_session(), roles=roles, year=datetime.datetime.now().strftime('%Y')
 )
 render._lookup.filters.update(myFilters)
 
