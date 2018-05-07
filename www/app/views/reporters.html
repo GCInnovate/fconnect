@@ -122,15 +122,13 @@
 												<span class="input-group-addon" style=""><i class="fa fa-calendar"></i></span>
 											</div>
 										</div>
-                                        <!--
                                         <div class="form-group">
-                                            <label for="name" class="col-lg-3 control-label question">Code</label>
+                                            <label for="name" class="col-lg-3 control-label question">National ID</label>
                                             <div class="col-lg-9">
-                                                <input name="code" id="code" type="text" value="{{ code }}"
-                                                class="form-control myinput"/>
+                                                <input name="national_id" id="national_id" type="text" value="{{ national_id }}"
+                                                 pattern="^C[M|F]{1}[a-zA-Z0-9]{12}$" class="form-control myinput"/>
                                             </div>
                                         </div>
-                                        -->
 
                                     </div><!-- end right row-->
                                 </div>
@@ -183,7 +181,7 @@
 												<input type="hidden" name="villagename" id="villagename" value="{{ villagename }}"/>
 											</div>
 										</div>
-                                        <div class="form-group"><label class="col-lg-3 control-label question">Facility</label>
+                                        <div class="form-group"><label class="col-lg-3 control-label question">Facility<span class="asterisk">*</span></label>
                                             <div class="col-lg-9">
                                                 <select name="facility" id="facility" class="form-control myinput" required>
                                                     <option value="">Select Health Facility</option>

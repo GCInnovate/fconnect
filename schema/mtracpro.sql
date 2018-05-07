@@ -548,7 +548,7 @@ DROP VIEW IF EXISTS reporters_view;
 CREATE VIEW reporters_view AS
     SELECT a.id, a.firstname, a.lastname, a.firstname || ' ' || a.lastname as name,
         a.gender, a.telephone, a.alternate_tel, a.email,
-        a.reporting_location, a.created_by, a.district_id, a.uuid, a.code, a.date_of_birth,
+        a.reporting_location, a.created_by, a.district_id, a.uuid, a.code, a.date_of_birth, a.national_id,
         get_reporter_groups(a.id) as role, a.created, b.name as loc_name,
         b.code as location_code, d.name as facility, c.facility_id as facilityid, d.code as facilitycode
     FROM reporters a, locations b, reporter_healthfacility c, healthfacilities d

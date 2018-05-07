@@ -47,7 +47,7 @@ class Reporters:
             res = db.query(
                 "SELECT id, firstname, lastname, gender, telephone, "
                 "reporting_location, role, alternate_tel, facilityid, facility, code, date_of_birth, "
-                "created, loc_name FROM reporters_view "
+                "national_id, created, loc_name FROM reporters_view "
                 " WHERE id = $id", {'id': edit_val})
             if res:
                 r = res[0]
@@ -56,6 +56,7 @@ class Reporters:
                 lastname = r.lastname
                 gender = r.gender
                 telephone = r.telephone
+                national_id = r.national_id
                 role = r.role.split(',')
                 alt_telephone = r.alternate_tel
                 location = r.reporting_location
@@ -191,7 +192,7 @@ class Reporters:
         params = web.input(
             firstname="", lastname="", gender="", telephone="", email="", location="",
             role="", alt_telephone="", page="1", ed="", d_id="", district="", facility="",
-            code="", date_of_birth="", caller="", user="api_user", districtname="",
+            code="", date_of_birth="", national_id="", caller="", user="api_user", districtname="",
             subcountyname="", parishname="", villagename="", facilityname="")
         if params.caller != 'api':
             session = get_session()
@@ -255,13 +256,14 @@ class Reporters:
                     "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                     "telephone=$telephone, reporting_location=$location, "
                     "alternate_tel=$alt_tel, district_id = $district_id, "
-                    "code=$code, date_of_birth=$date_of_birth "
+                    "code=$code, date_of_birth=$date_of_birth, national_id=$national_id "
                     "WHERE id=$id RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'id': params.ed,
                         'alt_tel': params.alt_telephone, 'district_id': params.district,
-                        'code': params.code, 'date_of_birth': date_of_birth
+                        'code': params.code, 'date_of_birth': date_of_birth,
+                        'national_id': params.national_id
                     })
                 if r:
                     for group_id in params.role:
@@ -316,14 +318,15 @@ class Reporters:
                 r = db.query(
                     "INSERT INTO reporters (firstname, lastname, gender, telephone, "
                     " reporting_location, alternate_tel, "
-                    " district_id, code, date_of_birth) VALUES "
+                    " district_id, code, date_of_birth, national_id) VALUES "
                     " ($firstname, $lastname, $gender, $telephone, $location, "
-                    " $alt_tel, $district_id, $code, $date_of_birth) RETURNING id", {
+                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id) RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'alt_tel': params.alt_telephone,
                         'district_id': params.district, 'code': params.code,
-                        'date_of_birth': params.date_of_birth if params.date_of_birth else None
+                        'date_of_birth': params.date_of_birth if params.date_of_birth else None,
+                        'national_id': params.national_id
                     })
                 if r:
                     reporter_id = r[0]['id']
