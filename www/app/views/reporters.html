@@ -580,7 +580,7 @@
                 $.post('/reporters?caller=api&user=' + '{{ ses.username }}',
                     $('#reporter_form').serializeArray(),
                     function(data){
-                        data = $.parseJSON( data );
+                        data = JSON.parse(JSON.stringify((data));
                         /*
                         $('#text-error').html(data.message);
                         $('#alert_info').show();
