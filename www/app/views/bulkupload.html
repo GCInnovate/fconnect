@@ -165,17 +165,27 @@
         <script src="/static/js/plugins/dataTables/dataTables.tableTools.min.js"></script>
 
         <script src="/static/js/plugins/bootstrap-validator/dist/validator.min.js"></script>
+        <script src="/static/js/bootstrap-notify.min.js"></script>
 
         <script>
            $(document).ready(function() {
-            $('#alert_info').hide();
             $('#btn_import').click(function(){
                 $.post('/bulkupload?caller=api&user=' + '{{ ses.username }}',
                     $('#bulkupload_form').serializeArray(),
                     function(data){
-                        data = $.parseJSON( data );
-                        $('#text-error').html(data.message);
-                        $('#alert_info').show();
+                        data = JSON.parse(JSON.stringify(data));
+                        $.notify({
+                            title: "Response:",
+                            message: data.message
+
+                        },
+                        {
+                            type: data.status,
+                            animate: {
+                                        enter: 'animated flipInY',
+                                        exit: 'animated flipOutX'
+                                }
+                        });
                     });
                 return false;
             });
