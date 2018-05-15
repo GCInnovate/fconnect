@@ -78,12 +78,14 @@
 {% block content %}
 <form method="post" id="bulkupload_form" action="" role="form" enctype="multipart/form-data" class="form-horizontal" data-toggle="validator">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <!--
     <div class="row">
         <div class="col-lg-6 alert alert-success alert-dismissable fade in" id="alert_info">
             <button aria-hidden="true" class="close" data-dismiss="alert" type="button">×</button>
             <p class="text-error" id="text-error">{{ err_msg }}</p>
         </div>
     </div>
+    -->
     <div class="row">
         <!-- LEFT -->
             <div class="col-lg-6">
