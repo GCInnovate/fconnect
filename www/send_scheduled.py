@@ -38,9 +38,10 @@ def sendsms(params):  # params has the sms params
     res = requests.get(config["smsurl"], params=params)
     return res.text
 
+
 cur.execute(
-    "SELECT id, params::text, type, reporter_id FROM schedules WHERE to_char(run_time, 'yyyy-mm-dd HH:MI')"
-    " = to_char(now(), 'yyyy-mm-dd HH:MI') "
+    "SELECT id, params::text, type, reporter_id FROM schedules WHERE run_time "
+    " <= current_timestamp "
     " AND status = 'ready' FOR UPDATE NOWAIT")
 # FOR DEBUGGING
 # cur.execute(
