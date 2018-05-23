@@ -46,7 +46,7 @@ if not upload_file:
 order = {
     'role': 0, 'firstname': 1, 'lastname': 2, 'gender': 3, 'telephone': 4, 'alternate_tel': 5,
     'date_of_birth': 6, 'code': 7, 'district': 8, 'subcounty': 9, 'facility': 10,
-    'parish': 11, 'village': 12
+    'parish': 11, 'village': 12, 'nationalid': 13
 }
 
 print upload_file
@@ -129,6 +129,7 @@ for d in data:
     _fac = d[order['facility']].strip()
     _parish = d[order['parish']].strip()
     _village = d[order['village']].strip()
+    _nationalid = d[order['nationalid']].strip()
     if _subcounty and _subcounty in subcountiesByName:
         subcountyid = subcountiesByName[_subcounty]
         if subcountyid and _fac:
@@ -138,7 +139,8 @@ for d in data:
                 'firstname': _firstname, 'lastname': _lastname, 'gender': _gender,
                 'telephone': _telephone, 'alt_telephone': _alt_tel, 'role': rolesByName[_role],
                 'district': districtid, 'facility': facilityid, 'location': subcountyid,
-                'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user}
+                'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user,
+                'national_id': _nationalid}
             import pprint
             pprint.pprint(params)
             requests.post(config.get(

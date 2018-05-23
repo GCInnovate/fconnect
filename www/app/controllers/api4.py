@@ -11,7 +11,7 @@ class ReportersAPI:
         params = web.input(
             firstname="", lastname="", gender="", telephone="", email="", location="",
             role="", alt_telephone="", page="1", ed="", d_id="", district="", facility="",
-            code="", date_of_birth="", caller="", user="api_user")
+            code="", date_of_birth="", caller="", user="api_user", national_id="")
         if params.caller != 'api':
             session = get_session()
             username = session.username
@@ -61,13 +61,15 @@ class ReportersAPI:
                     "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                     "telephone=$telephone, reporting_location=$location, "
                     "alternate_tel=$alt_tel, district_id = $district_id, "
-                    "code=$code, date_of_birth=$date_of_birth "
+                    "code=$code, date_of_birth=$date_of_birth, "
+                    "national_id=$national_id "
                     "WHERE id=$id RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'id': params.ed,
                         'alt_tel': params.alt_telephone, 'district_id': params.district,
-                        'code': params.code, 'date_of_birth': params.date_of_birth
+                        'code': params.code, 'date_of_birth': params.date_of_birth,
+                        'national_id': params.national_id
                     })
                 if r:
                     for group_id in params.role:
@@ -117,14 +119,15 @@ class ReportersAPI:
                 r = db.query(
                     "INSERT INTO reporters (firstname, lastname, gender, telephone, "
                     " reporting_location, alternate_tel, "
-                    " district_id, code, date_of_birth) VALUES "
+                    " district_id, code, date_of_birth, national_id) VALUES "
                     " ($firstname, $lastname, $gender, $telephone, $location, "
-                    " $alt_tel, $district_id, $code, $date_of_birth) RETURNING id", {
+                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id) RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'alt_tel': params.alt_telephone,
                         'district_id': params.district, 'code': params.code,
-                        'date_of_birth': params.date_of_birth
+                        'date_of_birth': params.date_of_birth,
+                        'national_id': params.national_id
                     })
                 if r:
                     reporter_id = r[0]['id']

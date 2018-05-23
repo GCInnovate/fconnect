@@ -1,9 +1,37 @@
 import xlsxwriter
 import psycopg2
 import psycopg2.extras
+import getopt
+import sys
 from datetime import date
 from settings import config
 from settings import BASE_DIR
+
+
+cmd = sys.argv[1:]
+opts, args = getopt.getopt(
+    cmd, 'd:h',
+    ['district'])
+
+
+def usage():
+    return """usage: python create_excel_template2.py [-d <district-name>] [-h]
+    -d district for which to generate excel template
+    -h Show this message
+    """
+
+SQL = "SELECT id, name FROM locations WHERE level = 2 "
+
+for option, parameter in opts:
+    if option == '-d':
+        district = parameter.strip().capitalize()
+        if district:
+            SQL += "AND name='%s' " % district
+    if option == '-h':
+        print usage()
+        sys.exit(1)
+
+SQL += " ORDER BY name"
 
 TEMPLATES_DIR = BASE_DIR + "/static/downloads/"
 
@@ -12,7 +40,9 @@ conn = psycopg2.connect(
     " user=" + config["db_user"] + " password=" + config["db_passwd"])
 cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-cur.execute("SELECT id, name FROM locations WHERE level = 2 ORDER BY name")
+# cur.execute("SELECT id, name FROM locations WHERE level = 2 ORDER BY name")
+cur.execute(SQL)
+
 res = cur.fetchall()
 for r in res:
     district_name = r['name']
@@ -46,7 +76,8 @@ for r in res:
 
         headings = [
             'Role', 'First Name', 'Last Name', 'Gender', 'Telephone', 'Other Telephone',
-            'Date of Birth', 'Code', 'District', 'Subcounty', 'Heath Facility', 'Parish', 'Village'
+            'Date of Birth', 'Code', 'District', 'Subcounty', 'Health Facility', 'Parish', 'Village',
+            'National ID'
         ]
 
         for idx, title in enumerate(headings):
@@ -65,7 +96,7 @@ for r in res:
         worksheet.set_column("B:C", 15, text_format)
         worksheet.set_column("E:F", 17, text_format)
         worksheet.set_column("G:G", 15, date_format)
-        worksheet.set_column("H:M", 15, text_format)
+        worksheet.set_column("H:N", 15, text_format)
         worksheet.write_comment('A1', 'Role should either be VHT, Nurse or Midwife', {'visible': False})
         worksheet.write_comment('G1', 'Birthday should be of the form DD Month YYY.\n eg 20 April 1980', {'visible': False})
         # worksheet.data_validation(1, 6, 1000, 6, {
