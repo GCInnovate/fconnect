@@ -74,7 +74,7 @@ class Users:
             page = int(params.page)
         except:
             page = 1
-        is_active = 't' if params.is_active == "on" else 'f'
+        is_active = 't' if params.is_active == "on" else 't'  # XXX change last t to f if fixed
         # role = 'Administrator' if params.is_super == "on" else 'Basic'
         with db.transaction():
             if params.ed:
