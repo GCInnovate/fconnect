@@ -47,12 +47,14 @@ class ReportersAPI:
         contact_params = {
             'urns': urns,
             'name': params.firstname + ' ' + params.lastname,
-            'groups': ['%s' % rolesById[int(i)] for i in params.role],
+            'groups': ['Type = %s' % rolesById[int(i)] for i in params.role],
             'fields': {
                 # 'email': params.email,
-                'gender': params.gender
+                'gender': params.gender,
+                'Registered By': 'RapidPro API'
             }
         }
+        print contact_params
 
         with db.transaction():
             if params.ed and allow_edit:
@@ -106,6 +108,24 @@ class ReportersAPI:
                 has_reporter = db.query(
                     "SELECT id FROM reporters WHERE telephone = $tel", {'tel': params.telephone})
                 if has_reporter:
+                    reporterid = has_reporter[0]["id"]
+                    rx = db.query(
+                        "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
+                        "telephone=$telephone, reporting_location=$location, "
+                        "alternate_tel=$alt_tel, district_id = $district_id, "
+                        "code=$code, date_of_birth=$date_of_birth, "
+                        "national_id=$national_id "
+                        "WHERE id=$id RETURNING id", {
+                            'firstname': params.firstname, 'lastname': params.lastname,
+                            'gender': params.gender, 'telephone': params.telephone,
+                            'location': location, 'id': reporterid,
+                            'alt_tel': params.alt_telephone, 'district_id': params.district,
+                            'code': params.code, 'date_of_birth': params.date_of_birth,
+                            'national_id': params.national_id
+                        })
+                    sync_time = current_time + datetime.timedelta(seconds=60)
+                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+
                     if params.caller == 'api':
                         return json.dumps({
                             'message': "Reporter with Telephone:%s already registered" % params.telephone})
