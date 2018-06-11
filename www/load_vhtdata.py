@@ -141,10 +141,13 @@ for d in data:
                 'district': districtid, 'facility': facilityid, 'location': subcountyid,
                 'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user,
                 'national_id': _nationalid}
-            import pprint
-            pprint.pprint(params)
-            requests.post(config.get(
-                'reporters_upload_endpoint',
-                'http://localhost:8080/reportersupload'), data=params)
+            try:
+                import pprint
+                pprint.pprint(params)
+                requests.post(config.get(
+                    'reporters_upload_endpoint',
+                    'http://localhost:8080/reportersupload'), data=params)
+            except:
+                pass
 
 conn.close()

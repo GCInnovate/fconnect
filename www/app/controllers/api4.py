@@ -120,7 +120,8 @@ class ReportersAPI:
                             'gender': params.gender, 'telephone': params.telephone,
                             'location': location, 'id': reporterid,
                             'alt_tel': params.alt_telephone, 'district_id': params.district,
-                            'code': params.code, 'date_of_birth': params.date_of_birth,
+                            'code': params.code,
+                            'date_of_birth': params.date_of_birth if params.date_of_birth else None,
                             'national_id': params.national_id
                         })
                     sync_time = current_time + datetime.timedelta(seconds=60)
@@ -146,7 +147,7 @@ class ReportersAPI:
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'alt_tel': params.alt_telephone,
                         'district_id': params.district, 'code': params.code,
-                        'date_of_birth': params.date_of_birth,
+                        'date_of_birth': params.date_of_birth if params.date_of_birth else None,
                         'national_id': params.national_id
                     })
                 if r:
