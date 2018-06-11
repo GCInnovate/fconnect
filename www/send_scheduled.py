@@ -15,7 +15,7 @@ logging.basicConfig(
     filemode='a'
 )
 
-client = TembaClient(config.get('familyconnet_uri', 'http://localhost:8000/'), config['api_token'])
+client = TembaClient(config.get('familyconnect_uri', 'http://localhost:8000/'), config['api_token'])
 
 # To handle Json in DB well
 psycopg2.extras.register_default_json(loads=lambda x: x)
@@ -64,12 +64,15 @@ for r in res:
             logging.info(
                 "Scheduler run: [schedid:%s] [status:%s] [msg:%s]" % (r["id"], status, params["text"]))
         elif r['type'] == 'push_contact':  # push RapidPro contacts
-            cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
-            rpt = cur.fetchone()
-            if rpt["uuid"]:
-                # here we update contact in rapidpro
-                resp = post_request(
-                    json.dumps(params), config["default_api_uri"] + "?uuid=" + rpt["uuid"])
+            if r["reporter_id"]:
+                cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
+                rpt = cur.fetchone()
+                if rpt["uuid"]:
+                    # here we update contact in rapidpro
+                    resp = post_request(
+                        json.dumps(params), config["default_api_uri"] + "?uuid=" + rpt["uuid"])
+                else:
+                    resp = post_request(json.dumps(params))
             else:
                 # here we create contact in rapidpro
                 resp = post_request(json.dumps(params))

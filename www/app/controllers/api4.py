@@ -44,17 +44,19 @@ class ReportersAPI:
                 urns.append("tel:" + telephone)
             except:
                 telephone = ''
+        groups = ['%s' % rolesById[int(i)] for i in params.role]
+        rtype = groups[0] if groups else 'VHT'
         contact_params = {
             'urns': urns,
             'name': params.firstname + ' ' + params.lastname,
-            'groups': ['Type = %s' % rolesById[int(i)] for i in params.role],
+            # 'groups': ['Type = %s' % rolesById[int(i)] for i in params.role],
             'fields': {
                 # 'email': params.email,
                 'gender': params.gender,
-                'Registered By': 'RapidPro API'
+                'registered_by': 'Portal v2',
+                'type': rtype
             }
         }
-        print contact_params
 
         with db.transaction():
             if params.ed and allow_edit:
@@ -101,7 +103,7 @@ class ReportersAPI:
 
                     sync_time = current_time + datetime.timedelta(seconds=60)
                     if urns:  # only queue if we have numbers
-                        queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+                        queue_schedule(db, contact_params, sync_time, userid, 'push_contact', params.ed)
                 return web.seeother("/reporters")
             else:
                 location = params.location if params.location else None
@@ -125,7 +127,7 @@ class ReportersAPI:
                             'national_id': params.national_id
                         })
                     sync_time = current_time + datetime.timedelta(seconds=60)
-                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact', reporterid)
 
                     if params.caller == 'api':
                         return json.dumps({
@@ -171,7 +173,7 @@ class ReportersAPI:
                     audit_log(db, log_dict)
 
                     sync_time = current_time + datetime.timedelta(seconds=60)
-                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact')
+                    queue_schedule(db, contact_params, sync_time, userid, 'push_contact', reporter_id)
                 if params.caller == 'api':
                     return json.dumps({'message': 'success'})
                 else:
