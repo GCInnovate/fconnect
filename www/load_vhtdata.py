@@ -140,7 +140,7 @@ for d in data:
                 'telephone': _telephone, 'alt_telephone': _alt_tel, 'role': rolesByName[_role],
                 'district': districtid, 'facility': facilityid, 'location': subcountyid,
                 'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user,
-                'national_id': _nationalid}
+                'national_id': _nationalid, "facilityname": _fac}
             try:
                 import pprint
                 pprint.pprint(params)

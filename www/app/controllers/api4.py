@@ -11,7 +11,7 @@ class ReportersAPI:
         params = web.input(
             firstname="", lastname="", gender="", telephone="", email="", location="",
             role="", alt_telephone="", page="1", ed="", d_id="", district="", facility="",
-            code="", date_of_birth="", caller="", user="api_user", national_id="")
+            code="", date_of_birth="", caller="", user="api_user", national_id="", facilityname="")
         if params.caller != 'api':
             session = get_session()
             username = session.username
@@ -54,7 +54,8 @@ class ReportersAPI:
                 # 'email': params.email,
                 'gender': params.gender,
                 'registered_by': 'Portal v2',
-                'type': rtype
+                'type': rtype,
+                'facility': params.facilityname
             }
         }
 
