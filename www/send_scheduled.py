@@ -77,6 +77,7 @@ for r in res:
                 # here we create contact in rapidpro
                 resp = post_request(json.dumps(params))
             # print resp.text
+            resp_text = resp.text
             if resp.status_code in (200, 201, 203, 204):
                 status = 'completed'
                 response_dict = json.loads(resp.text)
@@ -100,7 +101,7 @@ for r in res:
             cur.execute("UPDATE schedules SET status = %s WHERE id = %s", [status, r["id"]])
             conn.commit()
             logging.info(
-                "Scheduler run: [schedid:%s] [status:%s] [push_contacts:%s]" % (r["id"], status, params["phone"]))
+                "Scheduler run: [schedid:%s] [status:%s] [push_contacts:%s]" % (r["id"], status, params["urns"]))
     except Exception as e:
         logging.error("Scheduler Failed on [schedid:%s], [reason:%s] [resp:%s]" % (r["id"], str(e), resp_text))
 conn.close()
