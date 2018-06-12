@@ -386,6 +386,9 @@
 
             $('#data_form').hide();
             $('#data_list').hide();
+            {% if page > 1 %}
+                $('#data_list').show();
+            {% endif %}
             $('#mydata').DataTable({
                 dom: 'Bfrtip',
                 buttons: [
