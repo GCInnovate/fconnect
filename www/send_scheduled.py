@@ -34,6 +34,13 @@ def post_request(data, url=config['default_api_uri']):
     return response
 
 
+def get_request(data, url=config['default_api_uri']):
+    response = requests.get(url, data=data, headers={
+        'Content-type': 'application/json',
+        'Authorization': 'Token %s' % config['api_token']})
+    return response
+
+
 def sendsms(params):  # params has the sms params
     res = requests.get(config["smsurl"], params=params)
     return res.text
@@ -64,18 +71,19 @@ for r in res:
             logging.info(
                 "Scheduler run: [schedid:%s] [status:%s] [msg:%s]" % (r["id"], status, params["text"]))
         elif r['type'] == 'push_contact':  # push RapidPro contacts
+            payload = json.dumps(params)
             if r["reporter_id"]:
                 cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
                 rpt = cur.fetchone()
                 if rpt["uuid"]:
                     # here we update contact in rapidpro
                     resp = post_request(
-                        json.dumps(params), config["default_api_uri"] + "?uuid=" + rpt["uuid"])
+                        payload, config["default_api_uri"] + "?uuid=" + rpt["uuid"])
                 else:
-                    resp = post_request(json.dumps(params))
+                    resp = post_request(payload)
             else:
                 # here we create contact in rapidpro
-                resp = post_request(json.dumps(params))
+                resp = post_request(payload)
             # print resp.text
             resp_text = resp.text
             if resp.status_code in (200, 201, 203, 204):
@@ -96,6 +104,30 @@ for r in res:
                     except:
                         pass
                     conn.commit()
+            elif resp.status_code == 400:
+                # if already in familyconnect
+                urn = payload.get('urns', [])
+                if urn:
+                    tel = urn[0]
+                    resp2 = get_request(config['default_api_uri'] + "urn=%s" % tel)
+                    xx = json.loads(resp2.text)
+                    results = xx.get('results', '')
+                    if results:
+                        uuid = results[0].get('uuid', '')
+                        # print uuid
+                        respx = post_request(payload, config['default_api_uri'] + "uuid=%s" % uuid)
+                        status = 'completed'
+                        cur.execute(
+                            "UPDATE reporters SET uuid = %s WHERE id=%s",
+                            [uuid, r["reporter_id"]])
+                        # try:
+                        #     client.create_flow_start(
+                        #         config['vht_registration_flow_uuid'],
+                        #         contacts=[contact_uuid],
+                        #         extra=params)
+                        # except:
+                        #     pass
+                        # conn.commit()
             else:
                 status = 'failed'
             cur.execute("UPDATE schedules SET status = %s WHERE id = %s", [status, r["id"]])
