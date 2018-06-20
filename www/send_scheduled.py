@@ -106,7 +106,7 @@ for r in res:
                     conn.commit()
             elif resp.status_code == 400:
                 # if already in familyconnect
-                urn = payload.get('urns', [])
+                urn = params.get('urns', [])
                 if urn:
                     tel = urn[0]
                     resp2 = get_request(config['default_api_uri'] + "urn=%s" % tel)
