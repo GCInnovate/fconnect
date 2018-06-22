@@ -34,8 +34,8 @@ def post_request(data, url=config['default_api_uri']):
     return response
 
 
-def get_request(data, url=config['default_api_uri']):
-    response = requests.get(url, data=data, headers={
+def get_request(url=config['default_api_uri']):
+    response = requests.get(url, headers={
         'Content-type': 'application/json',
         'Authorization': 'Token %s' % config['api_token']})
     return response
@@ -105,18 +105,23 @@ for r in res:
                         pass
                     conn.commit()
             elif resp.status_code == 400:
-                # if already in familyconnect
+                # perhaps already in familyconnect
                 urn = params.get('urns', [])
                 if urn:
                     tel = urn[0]
-                    resp2 = get_request(config['default_api_uri'] + "urn=%s" % tel)
+                    url = config['default_api_uri'] + "urn=%s" % tel
+                    # print "YYY", url
+                    resp2 = get_request(url)
                     xx = json.loads(resp2.text)
                     results = xx.get('results', '')
-                    if results:
+                    # print results
+                    if results and len(results) < 2:
                         uuid = results[0].get('uuid', '')
-                        # print uuid
+                        # print uuid, tel
                         respx = post_request(payload, config['default_api_uri'] + "uuid=%s" % uuid)
                         status = 'completed'
+                        logging.info(
+                            "Scheduler run: contact update [schedid:%s] [tel: %s]" % (r["id"], tel))
                         cur.execute(
                             "UPDATE reporters SET uuid = %s WHERE id=%s",
                             [uuid, r["reporter_id"]])
