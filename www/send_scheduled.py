@@ -125,14 +125,13 @@ for r in res:
                         cur.execute(
                             "UPDATE reporters SET uuid = %s WHERE id=%s",
                             [uuid, r["reporter_id"]])
-                        # try:
-                        #     client.create_flow_start(
-                        #         config['vht_registration_flow_uuid'],
-                        #         contacts=[contact_uuid],
-                        #         extra=params)
-                        # except:
-                        #     pass
-                        # conn.commit()
+                        try:
+                            client.create_flow_start(
+                                config['vht_registration_flow_uuid'],
+                                contacts=[contact_uuid],
+                                extra=params)
+                        except:
+                            pass
             else:
                 status = 'failed'
             cur.execute("UPDATE schedules SET status = %s WHERE id = %s", [status, r["id"]])
