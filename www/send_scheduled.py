@@ -128,7 +128,7 @@ for r in res:
                         try:
                             client.create_flow_start(
                                 config['vht_registration_flow_uuid'],
-                                contacts=[contact_uuid],
+                                contacts=[uuid],
                                 extra=params)
                         except:
                             pass
