@@ -71,6 +71,8 @@ for r in rs:
 # load subcounties in district. Plus facilities per subcounty
 subcountiesByName = {}
 subcountyFacilitiesByName = {}  # {subcountyid: {facilityname: facilityid, ....}}
+subcountyParishesByName = {}  # {subcountyid: {parishname: parishid, ...}}
+subcountyVillagesByName = {}  # {subcountyid: {villagename: villageid, ...}}
 cur.execute(
     "SELECT id, name FROM locations WHERE tree_parent_id = %s",
     [allDistrictsByName[district.capitalize()]])
@@ -83,6 +85,18 @@ for r in rs:
     subcounty_facilities = cur.fetchall()
     for facility in subcounty_facilities:
         subcountyFacilitiesByName[r['id']][facility['name']] = facility['id']
+
+    subcountyParishesByName[r['id']] = {}
+    cur.execute("SELECT id, name FROM get_children(%s)", [r['id']])
+    subcounty_parishes = cur.fetchall()
+    for parish in subcounty_parishes:
+        subcountyParishesByName[r['id']][parish['name']] = parish['id']
+
+    subcountyVillagesByName[r['id']] = {}
+    cur.execute("SELECT id, name FROM get_descendants(%s) where type_id = 6", [r['id']])
+    subcounty_villages = cur.fetchall()
+    for village in subcounty_villages:
+        subcountyVillagesByName[r['id']][village['name']] = village['id']
 
 import pprint
 pprint.pprint(subcountyFacilitiesByName)
@@ -133,14 +147,41 @@ for d in data:
     if _subcounty and _subcounty in subcountiesByName:
         subcountyid = subcountiesByName[_subcounty]
         if subcountyid and _fac:
-            facilityid = subcountyFacilitiesByName[subcountyid][_fac]
+            location = subcountyid
+            parishname = ""
+            villagename = ""
+            if _parish:
+                parish_loc = 0
+                try:
+                    parish_loc = subcountyParishesByName[subcountyid][_parish]
+                    if parish_loc:
+                        parishname = _parish
+                        # location = parish_loc
+                except:
+                    pass
+            if _village:
+                try:
+                    village_loc = subcountyVillagesByName[subcountyid][_village]
+                    if village_loc:
+                        villagename = _village
+                        # location = village_loc
+                except:
+                    pass
+            try:
+                facilityid = subcountyFacilitiesByName[subcountyid][_fac]
+            except:
+                print "Facility ID for [%s]could not be got" % _fac, "subcountyid:", subcountyid
+                continue
             print "WE CAN ADD THIS ONE YEY!"
             params = {
                 'firstname': _firstname, 'lastname': _lastname, 'gender': _gender,
                 'telephone': _telephone, 'alt_telephone': _alt_tel, 'role': rolesByName[_role],
                 'district': districtid, 'facility': facilityid, 'location': subcountyid,
                 'caller': 'api', 'date_of_birth': _dob, 'code': _code, 'user': user,
-                'national_id': _nationalid, "facilityname": _fac}
+                'national_id': _nationalid, "facilityname": _fac,
+                'subcounty': _subcounty,
+                'parish': parishname, 'village': villagename,
+                'districtname': district}
             try:
                 import pprint
                 pprint.pprint(params)
