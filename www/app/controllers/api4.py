@@ -1,6 +1,8 @@
 import web
 import json
 import datetime
+import simplejson
+import psycopg2.extras
 from . import db, get_session, render
 from . import rolesById
 from app.tools.utils import audit_log, queue_schedule, format_msisdn
@@ -71,7 +73,7 @@ class ReportersAPI:
                 r = db.query(
                     "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                     "telephone=$telephone, reporting_location=$location, "
-                    "alternate_tel=$alt_tel, district_id = $district_id, "
+                    "alternate_tel=$alt_tel, district_id = $district_id, facilityid=$facility, "
                     "code=$code, date_of_birth=$date_of_birth, "
                     "national_id=$national_id "
                     "WHERE id=$id RETURNING id", {
@@ -80,24 +82,22 @@ class ReportersAPI:
                         'location': location, 'id': params.ed,
                         'alt_tel': params.alt_telephone, 'district_id': params.district,
                         'code': params.code, 'date_of_birth': params.date_of_birth,
-                        'national_id': params.national_id
+                        'national_id': params.national_id, 'facility': params.facility
                     })
                 if r:
-                    for group_id in params.role:
-                        rx = db.query(
-                            "SELECT id FROM reporter_groups_reporters "
-                            "WHERE reporter_id = $id AND group_id =$gid ",
-                            {'gid': group_id, 'id': params.ed})
-                        if not rx:
-                            db.query(
-                                "INSERT INTO reporter_groups_reporters (group_id, reporter_id) "
-                                " VALUES ($group_id, $reporter_id)",
-                                {'group_id': group_id, 'reporter_id': params.ed})
-                    # delete other groups
                     db.query(
-                        "DELETE FROM reporter_groups_reporters WHERE "
-                        "reporter_id=$id AND group_id NOT IN $roles",
-                        {'id': params.ed, 'roles': params.role})
+                        "UPDATE reporters SET groups = $groups::INTEGER[], "
+                        " jparents = $ancestors WHERE id = $id",
+                        {
+                            'id': params.ed,
+                            'groups': str([int(params.role)]).replace(
+                                '[', '{').replace(']', '}').replace('\'', '\"'),
+                            'ancestors': psycopg2.extras.Json({
+                                'd': params.district,
+                                's': params.subcounty,
+                                'p': params.parish}, dumps=simplejson.dumps)
+                        }
+                    )
 
                     log_dict = {
                         'logtype': 'Web', 'action': 'Update', 'actor': username,
@@ -121,7 +121,7 @@ class ReportersAPI:
                     rx = db.query(
                         "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                         "telephone=$telephone, reporting_location=$location, "
-                        "alternate_tel=$alt_tel, district_id = $district_id, "
+                        "alternate_tel=$alt_tel, district_id = $district_id, facilityid=$facility, "
                         "code=$code, date_of_birth=$date_of_birth, "
                         "national_id=$national_id "
                         "WHERE id=$id RETURNING id", {
@@ -131,7 +131,7 @@ class ReportersAPI:
                             'alt_tel': params.alt_telephone, 'district_id': params.district,
                             'code': params.code,
                             'date_of_birth': params.date_of_birth if params.date_of_birth else None,
-                            'national_id': params.national_id
+                            'national_id': params.national_id, 'facility': params.facility
                         })
                     sync_time = current_time + datetime.timedelta(seconds=60)
                     queue_schedule(db, contact_params, sync_time, userid, 'push_contact', reporterid)
@@ -149,27 +149,32 @@ class ReportersAPI:
                 r = db.query(
                     "INSERT INTO reporters (firstname, lastname, gender, telephone, "
                     " reporting_location, alternate_tel, "
-                    " district_id, code, date_of_birth, national_id) VALUES "
+                    " district_id, code, date_of_birth, national_id, facilityid) VALUES "
                     " ($firstname, $lastname, $gender, $telephone, $location, "
-                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id) RETURNING id", {
+                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id, $facilityid) RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'alt_tel': params.alt_telephone,
                         'district_id': params.district, 'code': params.code,
                         'date_of_birth': params.date_of_birth if params.date_of_birth else None,
-                        'national_id': params.national_id
+                        'national_id': params.national_id, 'facilityid': params.facility
                     })
                 if r:
                     reporter_id = r[0]['id']
                     db.query(
-                        "INSERT INTO reporter_healthfacility (reporter_id, facility_id) "
-                        "VALUES($reporter_id, $facility_id)",
-                        {'reporter_id': reporter_id, 'facility_id': params.facility})
-                    for group_id in params.role:
-                        db.query(
-                            "INSERT INTO reporter_groups_reporters (group_id, reporter_id) "
-                            " VALUES ($role, $reporter_id)",
-                            {'role': group_id, 'reporter_id': reporter_id})
+                        "UPDATE reporters SET groups = $groups::INTEGER[], "
+                        " jparents = $ancestors WHERE id = $id",
+                        {
+                            'id': reporter_id,
+                            'groups': str([int(params.role)]).replace(
+                                '[', '{').replace(']', '}').replace('\'', '\"'),
+                            'ancestors': psycopg2.extras.Json({
+                                'd': params.district,
+                                's': params.subcounty,
+                                'p': params.parish}, dumps=simplejson.dumps)
+                        }
+                    )
+
                     log_dict = {
                         'logtype': 'Web', 'action': 'Create', 'actor': username,
                         'ip': web.ctx['ip'],

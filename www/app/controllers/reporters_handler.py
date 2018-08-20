@@ -1,6 +1,8 @@
 import web
 import json
 import datetime
+import simplejson
+import psycopg2.extras
 from . import csrf_protected, db, require_login, get_session, render, allDistrictsByName
 from . import rolesById
 from app.tools.utils import audit_log, default, lit, queue_schedule, format_msisdn
@@ -47,7 +49,7 @@ class Reporters:
             res = db.query(
                 "SELECT id, firstname, lastname, gender, telephone, "
                 "reporting_location, role, alternate_tel, facilityid, facility, code, date_of_birth, "
-                "national_id, created, loc_name FROM reporters_view "
+                "national_id, created, loc_name FROM reporters_view1 "
                 " WHERE id = $id", {'id': edit_val})
             if res:
                 r = res[0]
@@ -60,6 +62,7 @@ class Reporters:
                 role = r.role.split(',')
                 alt_telephone = r.alternate_tel
                 location = r.reporting_location
+                parish = ""
                 subcounty = ""
                 facilityid = r.facilityid
                 facility = r.facility
@@ -67,6 +70,7 @@ class Reporters:
                 code = r.code
                 date_of_birth = r.date_of_birth
                 district = ""
+                village = ""
                 villagename = r.loc_name
                 subcounties = []
                 ancestors = db.query(
@@ -77,9 +81,13 @@ class Reporters:
                         if loc['level'] == 4:
                             parish = loc
                             parishname = loc['name']
+                            villages = db.query(
+                                "SELECT id, name FROM get_children($id)", {'id': loc['id']})
                         if loc['level'] == 3:
                             subcounty = loc
                             subcountyname = loc['name']
+                            parishes = db.query(
+                                "SELECT id, name FROM get_children($id)", {'id': loc['id']})
                         elif loc['level'] == 2:
                             district = loc
                             districtname = loc['name']
@@ -115,8 +123,8 @@ class Reporters:
                             params.d_id, rx['name'], rx['telephone']),
                         'user': session.sesid
                     }
-                    db.query("DELETE FROM reporter_groups_reporters WHERE reporter_id=$id", {'id': params.d_id})
-                    db.query("DELETE FROM reporter_healthfacility WHERE reporter_id=$id", {'id': params.d_id})
+                    # db.query("DELETE FROM reporter_groups_reporters WHERE reporter_id=$id", {'id': params.d_id})
+                    # db.query("DELETE FROM reporter_healthfacility WHERE reporter_id=$id", {'id': params.d_id})
                     db.query("DELETE FROM schedules WHERE reporter_id=$id", {'id': params.d_id})
                     db.query("DELETE FROM reporters WHERE id=$id", {'id': params.d_id})
                     audit_log(db, log_dict)
@@ -133,7 +141,7 @@ class Reporters:
                     "name ilike '%%%%%s%%%%')")
                 criteria = criteria % (params.search, params.search, params.search)
                 dic = lit(
-                    relations='reporters_view',
+                    relations='reporters_view1',
                     fields=(
                         "id, name, gender, telephone, district_id, alternate_tel, "
                         "facility, role, uuid, created "),
@@ -142,7 +150,7 @@ class Reporters:
                     limit=limit, offset=start)
             else:
                 dic = lit(
-                    relations='reporters_view',
+                    relations='reporters_view1',
                     fields=(
                         "id, name, gender, telephone, district_id, alternate_tel, "
                         "facility, role,  uuid, created "),
@@ -157,7 +165,7 @@ class Reporters:
                     "name ilike '%%%%%s%%%%')")
                 criteria = criteria % (params.search, params.search, params.search)
                 dic = lit(
-                    relations='reporters_view',
+                    relations='reporters_view1',
                     fields=(
                         "id, name, gender, telephone, district_id, alternate_tel, "
                         "facility, role, uuid, created "),
@@ -167,7 +175,7 @@ class Reporters:
             else:
                 criteria = "id >  (SELECT max(id) - 250 FROM reporters)"
                 dic = lit(
-                    relations='reporters_view',
+                    relations='reporters_view1',
                     fields=(
                         "id, name, gender, telephone, district_id, alternate_tel, "
                         "facility, role, uuid, created "),
@@ -193,6 +201,7 @@ class Reporters:
             firstname="", lastname="", gender="", telephone="", email="", location="",
             role="", alt_telephone="", page="1", ed="", d_id="", district="", facility="",
             code="", date_of_birth="", national_id="", caller="", user="api_user", districtname="",
+            subcounty="", parish="",
             subcountyname="", parishname="", villagename="", facilityname="")
         if params.caller != 'api':
             session = get_session()
@@ -255,7 +264,7 @@ class Reporters:
                 r = db.query(
                     "UPDATE reporters SET firstname=$firstname, lastname=$lastname, gender=$gender, "
                     "telephone=$telephone, reporting_location=$location, "
-                    "alternate_tel=$alt_tel, district_id = $district_id, "
+                    "alternate_tel=$alt_tel, district_id = $district_id, facilityid=$facility, "
                     "code=$code, date_of_birth=$date_of_birth, national_id=$national_id "
                     "WHERE id=$id RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
@@ -263,24 +272,22 @@ class Reporters:
                         'location': location, 'id': params.ed,
                         'alt_tel': params.alt_telephone, 'district_id': params.district,
                         'code': params.code, 'date_of_birth': date_of_birth,
-                        'national_id': params.national_id
+                        'national_id': params.national_id, 'facility': params.facility
                     })
                 if r:
-                    for group_id in params.role:
-                        rx = db.query(
-                            "SELECT id FROM reporter_groups_reporters "
-                            "WHERE reporter_id = $id AND group_id =$gid ",
-                            {'gid': group_id, 'id': params.ed})
-                        if not rx:
-                            db.query(
-                                "INSERT INTO reporter_groups_reporters (group_id, reporter_id) "
-                                " VALUES ($group_id, $reporter_id)",
-                                {'group_id': group_id, 'reporter_id': params.ed})
-                    # delete other groups
                     db.query(
-                        "DELETE FROM reporter_groups_reporters WHERE "
-                        "reporter_id=$id AND group_id = $roles",
-                        {'id': params.ed, 'roles': params.role})
+                        "UPDATE reporters SET groups = $groups::INTEGER[], "
+                        " jparents = $ancestors WHERE id = $id",
+                        {
+                            'id': params.ed,
+                            'groups': str([int(params.role)]).replace(
+                                '[', '{').replace(']', '}').replace('\'', '\"'),
+                            'ancestors': psycopg2.extras.Json({
+                                'd': params.district,
+                                's': params.subcounty,
+                                'p': params.parish}, dumps=simplejson.dumps)
+                        }
+                    )
 
                     log_dict = {
                         'logtype': 'Web', 'action': 'Update', 'actor': username,
@@ -318,27 +325,33 @@ class Reporters:
                 r = db.query(
                     "INSERT INTO reporters (firstname, lastname, gender, telephone, "
                     " reporting_location, alternate_tel, "
-                    " district_id, code, date_of_birth, national_id) VALUES "
+                    " district_id, code, date_of_birth, national_id, facilityid) VALUES "
                     " ($firstname, $lastname, $gender, $telephone, $location, "
-                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id) RETURNING id", {
+                    " $alt_tel, $district_id, $code, $date_of_birth, $national_id, $facilityid) RETURNING id", {
                         'firstname': params.firstname, 'lastname': params.lastname,
                         'gender': params.gender, 'telephone': params.telephone,
                         'location': location, 'alt_tel': params.alt_telephone,
                         'district_id': params.district, 'code': params.code,
                         'date_of_birth': params.date_of_birth if params.date_of_birth else None,
-                        'national_id': params.national_id
+                        'national_id': params.national_id, 'facilityid': params.facility
                     })
                 if r:
                     reporter_id = r[0]['id']
+
                     db.query(
-                        "INSERT INTO reporter_healthfacility (reporter_id, facility_id) "
-                        "VALUES($reporter_id, $facility_id)",
-                        {'reporter_id': reporter_id, 'facility_id': params.facility})
-                    for group_id in params.role:
-                        db.query(
-                            "INSERT INTO reporter_groups_reporters (group_id, reporter_id) "
-                            " VALUES ($role, $reporter_id)",
-                            {'role': group_id, 'reporter_id': reporter_id})
+                        "UPDATE reporters SET groups = $groups::INTEGER[], "
+                        " jparents = $ancestors WHERE id = $id",
+                        {
+                            'id': reporter_id,
+                            'groups': str([int(params.role)]).replace(
+                                '[', '{').replace(']', '}').replace('\'', '\"'),
+                            'ancestors': psycopg2.extras.Json({
+                                'd': params.district,
+                                's': params.subcounty,
+                                'p': params.parish}, dumps=simplejson.dumps)
+                        }
+                    )
+
                     log_dict = {
                         'logtype': 'Web', 'action': 'Create', 'actor': username,
                         'ip': web.ctx['ip'],
@@ -346,6 +359,7 @@ class Reporters:
                             reporter_id, params.firstname + ' ' + params.lastname, params.telephone),
                         'user': userid
                     }
+
                     audit_log(db, log_dict)
 
                     sync_time = current_time + datetime.timedelta(seconds=60)

@@ -176,7 +176,7 @@
 												<select name="village" id="village" class="form-control myinput">
 													<option value="">Select Village/LC</option>
 													{% for v in villages %}
-													<option value="{{ v.id }}" {% if v.id == village.id %} selected="yes" {% endif %}>{{ v.name}}</option>
+													<option value="{{ v.id }}" {% if v.id == location %} selected="yes" {% endif %}>{{ v.name}}</option>
 													{% endfor %}
 												</select>
 												<input type="hidden" name="location" id="location" value="{{ location }}"/>

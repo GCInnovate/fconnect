@@ -512,6 +512,22 @@ AS $function$
     END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.get_ancestor_id_by_type(loc_id bigint, atype text)
+ RETURNS INTEGER
+ LANGUAGE plpgsql
+AS $function$
+     DECLARE
+        r INTEGER;
+        our_lft INTEGER;
+        our_rght INTEGER;
+    BEGIN
+        SELECT lft, rght INTO our_lft, our_rght FROM locations WHERE id = loc_id;
+        SELECT id INTO r FROM locations WHERE lft <= our_lft AND rght >= our_rght AND
+            type_id=(SELECT id FROM locationtype WHERE name = atype);
+        RETURN r;
+    END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.get_location_name(loc_id bigint)
  RETURNS text
  LANGUAGE plpgsql
@@ -544,6 +560,23 @@ AS $function$
     END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.get_reporter_groups2(_reporter_id bigint)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+    DECLARE
+    r TEXT;
+    p TEXT;
+    BEGIN
+        r := '';
+        FOR p IN SELECT name FROM reporter_groups WHERE id IN
+            (SELECT unnest(groups) FROM reporters WHERE id = _reporter_id) LOOP
+            r := r || p || ',';
+        END LOOP;
+        RETURN rtrim(r,',');
+    END;
+$function$;
+
 DROP VIEW IF EXISTS reporters_view;
 CREATE VIEW reporters_view AS
     SELECT a.id, a.firstname, a.lastname, a.firstname || ' ' || a.lastname as name,
@@ -553,3 +586,16 @@ CREATE VIEW reporters_view AS
         b.code as location_code, d.name as facility, c.facility_id as facilityid, d.code as facilitycode
     FROM reporters a, locations b, reporter_healthfacility c, healthfacilities d
     WHERE a.reporting_location = b.id AND (a.id = c.reporter_id AND d.id = c.facility_id);
+
+DROP VIEW IF EXISTS reporters_view1;
+CREATE view reporters_view1 AS
+SELECT a.id,
+    a.firstname, a.lastname, (a.firstname || ' '::text) || a.lastname AS name,
+    a.gender,a.telephone, a.alternate_tel, a.email, a.reporting_location, a.created_by, a.district_id,
+    a.uuid, a.code, a.date_of_birth, a.national_id, get_reporter_groups2(a.id) AS role, a.created,
+    b.name AS loc_name, b.code AS location_code, d.name AS facility, a.facilityid,
+    a.jparents->>'p' as parishid, a.jparents->>'s' as subcountyid, d.code AS facilitycode
+   FROM reporters a,
+    locations b,
+    healthfacilities d
+  WHERE a.reporting_location = b.id AND d.id = a.facilityid;
