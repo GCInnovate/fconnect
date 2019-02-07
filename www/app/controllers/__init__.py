@@ -31,7 +31,7 @@ APP = None
 ourDistricts = []
 allDistricts = {}
 allDistrictsByName = {}  # make use in pages easy
-rs = db.query("SELECT id, name FROM  locations WHERE type_id = 3")
+rs = db.query("SELECT id, name FROM  locations WHERE type_id = 3 ORDER BY name")
 for r in rs:
     ourDistricts.append({'id': r['id'], 'name': r['name']})
     allDistricts[r['id']] = r['name']
@@ -97,7 +97,10 @@ render = render_jinja(
 )
 
 render._lookup.globals.update(
-    ses=get_session(), roles=roles, year=datetime.datetime.now().strftime('%Y')
+    ses=get_session(),
+    roles=roles,
+    year=datetime.datetime.now().strftime('%Y'),
+    ourDistricts=ourDistricts
 )
 render._lookup.filters.update(myFilters)
 

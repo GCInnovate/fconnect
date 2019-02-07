@@ -309,6 +309,9 @@ CREATE TABLE reporters(
     district_id BIGINT REFERENCES locations,
     reporting_location_name text not null default '',
     created_by INTEGER REFERENCES users(id), -- like actor id
+    facilityid INTEGER REFERENCES healthfacilities(id),
+    groups INTEGER [],
+    jparents JSON DEFAULT '{}'::json,
     created TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -599,3 +602,32 @@ SELECT a.id,
     locations b,
     healthfacilities d
   WHERE a.reporting_location = b.id AND d.id = a.facilityid;
+
+
+--CREATE TABLE chwr_reporters(
+--    id bigserial NOT NULL PRIMARY KEY,
+--    role text NOT NULL DEFAULT '',
+--    firstname TEXT NOT NULL DEFAULT '',
+--    lastname TEXT NOT NULL DEFAULT '',
+--    gender TEXT,
+--    telephone TEXT NOT NULL DEFAULT '',
+--    alternate_tel TEXT NOT NULL DEFAULT '',
+--    date_of_birth DATE,
+--    district TEXT,
+--    subcounty TEXT,
+--    parishid TEXT,
+--    village TEXT,
+--    facility TEXT,
+--    facilitycode TEXT,
+--    created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+--);
+
+CREATE TABLE chwr_reporters(
+    id bigserial NOT NULL PRIMARY KEY,
+    firstname TEXT NOT NULL DEFAULT '',
+    lastname TEXT NOT NULL DEFAULT '',
+    telephone TEXT NOT NULL DEFAULT '',
+    alternate_tel TEXT NOT NULL DEFAULT '',
+    uuid TEXT NOT NULL DEFAULT '',
+    created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

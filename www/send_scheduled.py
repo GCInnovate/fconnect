@@ -73,7 +73,10 @@ for r in res:
         elif r['type'] == 'push_contact':  # push RapidPro contacts
             payload = json.dumps(params)
             if r["reporter_id"]:
-                cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
+                if r['registered_by'] == 'CHWR':
+                    cur.execute("SELECT uuid FROM chwr_reporters WHERE id = %s", [r["reporter_id"]])
+                else:
+                    cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
                 rpt = cur.fetchone()
                 if rpt["uuid"]:
                     # here we update contact in rapidpro
@@ -93,9 +96,15 @@ for r in res:
                 contact_uuid = response_dict["uuid"]
                 if not rpt["uuid"]:
                     # update uuid for new contacts and start welcome flow
-                    cur.execute(
-                        "UPDATE reporters SET uuid = %s WHERE id=%s",
-                        [contact_uuid, r["reporter_id"]])
+                    if r['registered_by'] == 'CHWR':
+                        cur.execute(
+                            "UPDATE chwr_reporters SET uuid = %s WHERE id=%s",
+                            [contact_uuid, r["reporter_id"]])
+                    else:
+                        cur.execute(
+                            "UPDATE reporters SET uuid = %s WHERE id=%s",
+                            [contact_uuid, r["reporter_id"]])
+
                     try:
                         client.create_flow_start(
                             config['vht_registration_flow_uuid'],
