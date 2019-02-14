@@ -157,11 +157,10 @@ for d in data:
             'sub_county': _subcounty,
             'parish': _parish,
             'village': _village,
-            'reporter_id': reporter_id
         }
     }
 
     sync_time = current_time + datetime.timedelta(seconds=60)
-    queue_schedule(db, contact_params, sync_time, None, 'push_contact', 0)
+    queue_schedule(db, contact_params, sync_time, None, 'push_contact', reporter_id)
 
 conn.close()

@@ -4,6 +4,7 @@ import psycopg2.extras
 import json
 import requests
 import logging
+import sys
 from settings import config
 from temba_client.v2 import TembaClient
 
@@ -72,11 +73,17 @@ for r in res:
                 "Scheduler run: [schedid:%s] [status:%s] [msg:%s]" % (r["id"], status, params["text"]))
         elif r['type'] == 'push_contact':  # push RapidPro contacts
             payload = json.dumps(params)
+
             if r["reporter_id"]:
-                if r['registered_by'] == 'CHWR':
-                    cur.execute("SELECT uuid FROM chwr_reporters WHERE id = %s", [r["reporter_id"]])
-                else:
-                    cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
+                # print params
+                if 'fields' in params:
+                    if 'registered_by' in params['fields']:
+                        if params['fields']['registered_by'] == 'CHWR':
+                            cur.execute("SELECT uuid FROM chwr_reporters WHERE id = %s", [r["reporter_id"]])
+                        else:
+                            cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
+                    else:
+                        cur.execute("SELECT uuid FROM reporters WHERE id = %s", [r["reporter_id"]])
                 rpt = cur.fetchone()
                 if rpt["uuid"]:
                     # here we update contact in rapidpro
@@ -87,7 +94,7 @@ for r in res:
             else:
                 # here we create contact in rapidpro
                 resp = post_request(payload)
-            # print resp.text
+            print(resp.text)
             resp_text = resp.text
             if resp.status_code in (200, 201, 203, 204):
                 status = 'completed'
@@ -96,14 +103,20 @@ for r in res:
                 contact_uuid = response_dict["uuid"]
                 if not rpt["uuid"]:
                     # update uuid for new contacts and start welcome flow
-                    if r['registered_by'] == 'CHWR':
-                        cur.execute(
-                            "UPDATE chwr_reporters SET uuid = %s WHERE id=%s",
-                            [contact_uuid, r["reporter_id"]])
-                    else:
-                        cur.execute(
-                            "UPDATE reporters SET uuid = %s WHERE id=%s",
-                            [contact_uuid, r["reporter_id"]])
+                    if 'fields' in params:
+                        if 'registered_by' in params['fields']:
+                            if params['fields']['registered_by'] == 'CHWR':
+                                cur.execute(
+                                    "UPDATE chwr_reporters SET uuid = %s WHERE id=%s",
+                                    [contact_uuid, r["reporter_id"]])
+                            else:
+                                cur.execute(
+                                    "UPDATE reporters SET uuid = %s WHERE id=%s",
+                                    [contact_uuid, r["reporter_id"]])
+                        else:
+                            cur.execute(
+                                "UPDATE reporters SET uuid = %s WHERE id=%s",
+                                [contact_uuid, r["reporter_id"]])
 
                     try:
                         client.create_flow_start(
@@ -148,5 +161,7 @@ for r in res:
             logging.info(
                 "Scheduler run: [schedid:%s] [status:%s] [push_contacts:%s]" % (r["id"], status, params["urns"]))
     except Exception as e:
-        logging.error("Scheduler Failed on [schedid:%s], [reason:%s] [resp:%s]" % (r["id"], str(e), resp_text))
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        logging.error("Scheduler Failed on [schedid:%s], [reason:%s] [line:%s resp:%s]" % (r["id"], str(e), exc_tb.tb_lineno, resp_text))
+        break
 conn.close()
