@@ -108,7 +108,8 @@ for d in data:
             urns.append("tel:" + telephone)
         except:
             telephone = ""
-
+    if not urns:
+        continue
     # print "=====================>", _phone
     _district = d[order['district']].strip().capitalize()
     _subcounty = d[order['subcounty']].strip()
